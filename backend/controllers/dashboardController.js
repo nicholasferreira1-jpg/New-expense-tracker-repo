@@ -1,20 +1,18 @@
 const Income  = require("../models/Income");
 const Expense  = require("../models/Expense");
-
-const { isValidObject, Types, isValidObjectId } = require("mongoose");
-const { use } = require("react");
+const {isValidObjectId, Types } = require("mongoose");
 
 //Dashboard Data
 
-exports.getDashboardData = async (requestAnimationFrame, res ) => {
+exports.getDashboardData = async (req, res ) => {
     try {
-        const userId = res.user.id;
-        const userObject = new Types.ObjectId(String(userId));
+        const userId = req.user.id;
+        const userObjectId = new Types.ObjectId(String(userId));
 
         //fecth total income and expense
         const totalIncome = await Income.aggregate([
             { $match: { userId: userObjectId } },
-        { $group: { _id: null, total: { $sum: "amount"}}}       
+        { $group: { _id: null, total: { $sum: "$amount"}}}       
      ]);
 
      console.log("totalIncome", {totalIncome, userId: isValidObjectId(userId)});
@@ -27,7 +25,7 @@ exports.getDashboardData = async (requestAnimationFrame, res ) => {
      // Get Income transaction int the last 60 days
      const last60DaysIncomeTransactions = await Income.find({
     userId,
-    date: { $gte: newDate(date.now() - 60 * 24 * 60 * 60 * 1000) },
+    date: { $gte: new Date(date.now() - 60 * 24 * 60 * 60 * 1000) },
 }).sort({ date: -1 });
 
     // Get total income for last 60 days
@@ -37,13 +35,13 @@ exports.getDashboardData = async (requestAnimationFrame, res ) => {
     );
 
     // Get espense transactions in the last 30 days
-    const last30DaysIncomeTransactions = await Income.find({
+    const last30DaysExpenseTransactions = await Income.find({
     userId,
-    date: { $gte: newDate(date.now() - 30 * 24 * 60 * 60 * 1000) },
+    date: { $gte: new Date(date.now() - 30 * 24 * 60 * 60 * 1000) },
 }).sort({ date: -1 });
 
     // Get total income for last 30 days
-    const incomeLast30Days = last30DaysIncomeTransactions.reduce(
+    const expensesLast30Days = last30DaysExpenseTransactions.reduce(
         (sum, transaction) => sum + transaction.amount,
         0
     );
