@@ -1,14 +1,19 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from "react";
 import AuthLayout from "../../components/layouts/AuthLayout";
 import {Link, useNavigate} from "react-router-dom";
-import Input from  "../../components/layouts/Inputs/Input";
+import Input from  "../../components/Inputs/Input";
 import {validateEmail} from "../../utils/helper";
+import axiosInstance from '../../utils/axiosinstance';
+import { API_PATHS } from "../../utils/apiPaths" ;
+import { UserContext } from "../../context/userContext";
 
 
 const Login = () =>{
   const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState(null);
+
+    const { updateUser } = useContext(UserContext);
     
     const navigate = useNavigate();
     
@@ -17,26 +22,46 @@ const Login = () =>{
       e.preventDefault();
 // This is making sure when the user enter a incorrect email the code doesn't brake
 // Instead of breaking it will return a message to enter a valid email
-      if(!validateEmail(emial)) {
-        setError("Please emter a valid email address.");
+      if(!validateEmail(email)) {
+        setError("Please enter a valid email address.");
         return;
       }
 // Same With the password      
       if(!password) {
-        setError("}lease enter the password");
+        setError("Please enter the password");
         return;
       }
 
       setError("");
 
       //Login API Call
+      try {
+        const response = await axiosInstance.post(API_PATHS.AUTH.LOGIN, {
+          email,
+          password,
+        });
+        const { token, user } = response.data;
+
+        if (token) {
+          localStorage.setItem("token", token);
+          updateUser(user);
+          navigate("/dashboard");
+        }
+      } catch (error) {
+        if  (error.response && error.response.data.message) {
+          setError(error.response.data.message);
+        } else {
+          setError("Something went worng. Please try again");
+        }
+      }
+
     }
 
   return(
     <AuthLayout>
      <div className="lg:w-[70%] h-3/4 md:h-full flex flex-col justify-center">
             <h3 className="text-xl font-semibold text-black">Welcome Back</h3>
-            <p className="text-xs text-slate-7-- mt-[5px} mb-">
+            <p className="text-xs text-slate-7-- mt-[5px] mb-">
                 Please enter your login so i can steal your money
             </p>
 
